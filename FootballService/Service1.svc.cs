@@ -1,33 +1,41 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.ServiceModel;
-using System.ServiceModel.Web;
-using System.Text;
+﻿using System.Collections.Generic;
+using FootballService.Service;
 
 namespace FootballService
 {
-    // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "Service1" in code, svc and config file together.
-    // NOTE: In order to launch WCF Test Client for testing this service, please select Service1.svc or Service1.svc.cs at the Solution Explorer and start debugging.
-    public class Service1 : IService1
+    // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "TeamService" in code, svc and config file together.
+    // NOTE: In order to launch WCF Test Client for testing this service, please select TeamService.svc or TeamService.svc.cs at the Solution Explorer and start debugging.
+    public class TeamService : ITeamService
     {
-        public string GetData(int value)
+        private const string SitePath = "http://fapl.ru/";
+        private readonly HttpLoader httpLoader;
+        private readonly HttpParser httpParser;
+
+        public TeamService()
         {
-            return string.Format("You entered: {0}", value);
+            httpLoader = new HttpLoader();
+            httpParser = new HttpParser();
         }
 
-        public CompositeType GetDataUsingDataContract(CompositeType composite)
+        public string GetData(int value)
         {
-            if (composite == null)
+            string siteData = httpLoader.LoadContent(SitePath);
+            List<TeamResults> list = httpParser.GetTable(siteData);
+            var team = list.Find(x => x.Position == value);
+            if (team == null)
             {
-                throw new ArgumentNullException("composite");
+                return "error";
             }
-            if (composite.BoolValue)
-            {
-                composite.StringValue += "Suffix";
-            }
-            return composite;
+
+            return team.Name + " " + team.Position + " " + team.Score;
+        }
+
+        public string GetTeamResults(string teamName)
+        {
+            string siteData = httpLoader.LoadContent(SitePath);
+            List<TeamResults> list = httpParser.GetTable(siteData);
+            var result = list.Find(x => x.Name == teamName);
+            return result.Name + " " + result.Position + " " + result.Score;
         }
     }
 }
